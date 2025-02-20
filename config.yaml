@@ -1,0 +1,14 @@
+# kubectl-ai 配置文件
+
+# DeepSeek API 配置
+deepseek:
+  api_key: "" # 可通过环境变量 DEEPSEEK_API_KEY 覆盖
+
+# 执行配置
+auto_execute: false # 可通过环境变量 AUTO_EXECUTE 覆盖
+
+# 聊天配置
+enable_chat: false # 可通过环境变量 ENABLE_CHAT 覆盖
+
+# 调试配置
+debug: false # 可通过环境变量 DEBUG 覆盖
