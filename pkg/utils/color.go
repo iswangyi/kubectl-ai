@@ -2,36 +2,32 @@ package utils
 
 import "fmt"
 
-// ColorText 为文本添加颜色
-type ColorText struct {
-	Red    func(text string) string
-	Yellow func(text string) string
-	Green  func(text string) string
+// Blue 返回蓝色文本
+func Blue(text string) string {
+	return fmt.Sprintf("\x1b[34m%s\x1b[0m", text)
 }
 
-// NewColorText 创建新的颜色文本处理器
-func NewColorText() *ColorText {
-	return &ColorText{
-		Red: func(text string) string {
-			return fmt.Sprintf("\x1b[31m%s\x1b[0m", text)
-		},
-		Yellow: func(text string) string {
-			return fmt.Sprintf("\x1b[33m%s\x1b[0m", text)
-		},
-		Green: func(text string) string {
-			return fmt.Sprintf("\x1b[32m%s\x1b[0m", text)
-		},
-	}
+// Green 返回绿色文本
+func Green(text string) string {
+	return fmt.Sprintf("\x1b[32m%s\x1b[0m", text)
+}
+
+// Yellow 返回黄色文本
+func Yellow(text string) string {
+	return fmt.Sprintf("\x1b[33m%s\x1b[0m", text)
+}
+
+// Red 返回红色文本
+func Red(text string) string {
+	return fmt.Sprintf("\x1b[31m%s\x1b[0m", text)
 }
 
 // FormatCommand 格式化命令显示
 func FormatCommand(command string) string {
-	color := NewColorText()
-	return color.Red(command)
+	return Red(command)
 }
 
 // FormatWarning 格式化警告信息
 func FormatWarning(warning string, command string) string {
-	color := NewColorText()
-	return fmt.Sprintf("%s\n%s", color.Red(warning), color.Red(command))
+	return fmt.Sprintf("%s\n%s", Red(warning), Red(command))
 }
