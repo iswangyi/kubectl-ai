@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 const (
-	apiEndpoint = "https://api.deepseek.com/v1/chat/completions" // 请根据实际的 DeepSeek API 端点调整
+	apiEndpoint = "https://api.deepseek.com/chat/completions" // 请根据实际的 DeepSeek API 端点调整
+	//apiEndpoint = "https://api.deepseek.com/v1/chat/completions" // 请根据实际的 DeepSeek API 端点调整
 )
 
 // Client 代表 DeepSeek API 客户端
@@ -35,7 +37,7 @@ type Message struct {
 type ChatRequest struct {
 	Model     string    `json:"model"`
 	Messages  []Message `json:"messages"`
-	MaxTokens int       `json:"max_tokens"`
+	Steam bool          `json:"stream"`
 }
 
 type ChatResponse struct {
@@ -67,7 +69,6 @@ func (c *Client) TranslateCommand(ctx context.Context, naturalCommand string) (s
 	request := ChatRequest{
 		Model:     "deepseek-chat", // 使用适当的模型名称
 		Messages:  messages,
-		MaxTokens: 150,
 	}
 
 	requestBody, err := json.Marshal(request)
@@ -107,6 +108,13 @@ func (c *Client) TranslateCommand(ctx context.Context, naturalCommand string) (s
 		return "", fmt.Errorf("no response from API")
 	}
 
+	// 清理命令文本，移除 Markdown 格式标记
 	command := response.Choices[0].Message.Content
+	command = strings.TrimSpace(command)
+	command = strings.TrimPrefix(command, "```bash")
+	command = strings.TrimPrefix(command, "```")
+	command = strings.TrimSuffix(command, "```")
+	command = strings.TrimSpace(command)
+
 	return command, nil
 }

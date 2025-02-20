@@ -9,11 +9,9 @@ import (
 	"github.com/yourusername/kubectl-ai/pkg/config"
 	"github.com/yourusername/kubectl-ai/pkg/deepseek"
 	"github.com/yourusername/kubectl-ai/pkg/kubectl"
+	"github.com/yourusername/kubectl-ai/pkg/utils"
 )
 
-const (
-	deepseekAPIKey = "your-api-key-here" // 后续需要通过配置文件或环境变量设置
-)
 
 func main() {
 	// 加载配置
@@ -51,8 +49,8 @@ func main() {
 	// 检查是否是危险命令
 	if strings.HasPrefix(kubectlCommand, "[DANGEROUS]") {
 		kubectlCommand = strings.TrimPrefix(kubectlCommand, "[DANGEROUS]")
-		fmt.Printf("Warning: This command is potentially dangerous:\n%s\n", kubectlCommand)
-		fmt.Print("Do you want to proceed? (y/N): ")
+		fmt.Print(utils.FormatWarning("Warning: This command is potentially dangerous:", kubectlCommand))
+		fmt.Print("\nDo you want to proceed? (y/N): ")
 
 		var response string
 		fmt.Scanln(&response)
@@ -60,10 +58,11 @@ func main() {
 			fmt.Println("Command aborted")
 			os.Exit(0)
 		}
+	} else {
+		// 非危险命令也使用红色显示
+		fmt.Println(utils.FormatCommand(kubectlCommand))
 	}
 
-	// 显示将要执行的命令
-	fmt.Printf("Executing command: %s\n", kubectlCommand)
 
 	// 执行 kubectl 命令
 	if err := executor.Execute(ctx, kubectlCommand); err != nil {
