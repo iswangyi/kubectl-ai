@@ -8,7 +8,7 @@ deepseek:
 auto_execute: false # 可通过环境变量 AUTO_EXECUTE 覆盖
 
 # 聊天配置
-enable_chat: false # 可通过环境变量 ENABLE_CHAT 覆盖
+enable_chat: true # 可通过环境变量 ENABLE_CHAT 覆盖
 
 # 调试配置
-debug: false # 可通过环境变量 DEBUG 覆盖
+LOG_LEVEL: debug # 可通过环境变量 DEBUG 覆盖

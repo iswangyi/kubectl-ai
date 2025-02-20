@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"bufio"
 
 	"github.com/yourusername/kubectl-ai/pkg/config"
 	"github.com/yourusername/kubectl-ai/pkg/deepseek"
@@ -55,25 +56,9 @@ func main() {
 			os.Exit(1)
 		}
 
-		// 如果命令执行有输出，询问用户是否继续与 AI 交互
+		// 如果有输出，直接打印
 		if output != "" {
-			fmt.Print("是否将执行结果传递给 AI 继续处理？(y/n): ")
-			var response string
-			fmt.Scanln(&response)
-			if strings.ToLower(response) == "y" {
-				naturalCommand = fmt.Sprintf("%s\n命令执行结果：\n%s", naturalCommand, output)
-				kubectlCommand, err = client.TranslateCommand(ctx, naturalCommand)
-				if err != nil {
-					fmt.Printf("Error translating command with context: %v\n", err)
-					os.Exit(1)
-				}
-
-				// 执行新的命令
-				if _, err := executor.ExecuteNaturalCommand(ctx, kubectlCommand); err != nil {
-					fmt.Printf("Error executing command: %v\n", err)
-					os.Exit(1)
-				}
-			}
+			fmt.Printf("\n%s\n", output)
 		}
 
 	case "explain":
@@ -86,10 +71,83 @@ func main() {
 
 		// 打印解释
 		fmt.Println(explanation)
+	case "exec":
+		// 进入交互模式
+		fmt.Println("进入交互模式，输入 'exit' 退出")
+		scanner := bufio.NewScanner(os.Stdin)
+		for {
+			fmt.Print("\n请输入问题:")
+			var input string
+			if scanner.Scan() {
+				input = scanner.Text()
+			}
+
+			if input == "exit" {
+				fmt.Println("退出交互模式")
+				break
+			}
+
+			// 调用 DeepSeek API 转换命令
+			kubectlCommand, err := client.TranslateCommand(ctx, input)
+			if err != nil {
+				fmt.Printf("Error translating command: %v\n", err)
+				continue
+			}
+
+			// 执行命令并获取输出
+			output, err := executor.ExecuteNaturalCommand(ctx, kubectlCommand)
+			if err != nil {
+				fmt.Printf("Error executing command: %v\n", err)
+				continue
+			}
+
+			// 如果有输出，直接打印
+			if output != "" {
+				fmt.Printf("\n%s\n", output)
+			}
+
+			// 询问用户是否继续
+			for {
+				fmt.Print("\n是否基于当前结果继续对话？(y/n): ")
+				var response string
+				if scanner.Scan() {
+					response = scanner.Text()
+				}
+				response = strings.ToLower(strings.TrimSpace(response))
+				if response == "y" || response == "n" {
+					if response == "y" {
+						// 将当前输出作为上下文
+						fmt.Print("\n请输入新的问题: ")
+						if scanner.Scan() {
+							input = scanner.Text()
+							// 将新问题和上下文一起提交给 AI
+							contextCommand := fmt.Sprintf("基于上次执行结果：%s\n新的问题：%s", output, input)
+							kubectlCommand, err = client.TranslateCommand(ctx, contextCommand)
+							if err != nil {
+								fmt.Printf("Error translating command with context: %v\n", err)
+								break
+							}
+
+							// 执行新的命令
+							output, err = executor.ExecuteNaturalCommand(ctx, kubectlCommand)
+							if err != nil {
+								fmt.Printf("Error executing command: %v\n", err)
+							}
+							// 如果有输出，直接打印
+							if output != "" {
+								fmt.Printf("\n%s\n", output)
+							}
+						}
+					}
+					break
+				}
+				fmt.Println("请输入 y 或 n")
+			}
+		}
 
 	default:
 		fmt.Printf("Unknown subcommand: %s\n", subCommand)
-		fmt.Println("Usage: kubectl ai <cmd|explain> \"<natural language command>\"")
+		fmt.Println("Usage: kubectl ai <cmd|explain|exec> \"<natural language command>\"")
 		os.Exit(1)
 	}
 }

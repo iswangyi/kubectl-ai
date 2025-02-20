@@ -79,7 +79,6 @@ func (e *Executor) ExecuteNaturalCommand(ctx context.Context, kubectlCommand str
             if err != nil {
                 return "", fmt.Errorf("命令执行失败: %v", err)
             }
-            fmt.Printf("\n%s命令输出：%s\n", utils.Green("[输出] "), output)
             lastOutput = output
         }
     }
