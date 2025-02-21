@@ -51,6 +51,28 @@ func (e *Executor) ExecuteNaturalCommand(ctx context.Context, kubectlCommand str
         // 解析命令类型和实际命令
         cmdType, actualCmd := parseCommand(cmd)
 
+        // 判断是否需要用户确认
+        needConfirm := false
+        var warningMsg string
+
+        // 非查询命令或危险命令需要确认
+        if !e.isQueryCommand(actualCmd) && !e.autoExecute {
+            needConfirm = true
+            if cmdType == "DANGEROUS" {
+                warningMsg = fmt.Sprintf("\n%s即将执行危险命令：%s\n", utils.Yellow("[警告] "), actualCmd)
+            } else {
+                warningMsg = fmt.Sprintf("\n%s即将执行非查询命令：%s\n", utils.Yellow("[警告] "), actualCmd)
+            }
+        }
+
+        // 如果需要确认，显示警告并获取用户确认
+        if needConfirm {
+            fmt.Print(warningMsg)
+            if !confirmExecution() {
+                return "", fmt.Errorf("用户取消了命令执行")
+            }
+        }
+
         // 根据命令类型执行不同的操作
         switch cmdType {
         case "INFO":
@@ -62,16 +84,8 @@ func (e *Executor) ExecuteNaturalCommand(ctx context.Context, kubectlCommand str
             fmt.Printf("\n%s收集到的信息：%s\n", utils.Green("[INFO] "), output)
             lastOutput = output
 
-        case "DANGEROUS":
-            // 对于危险命令，需要用户确认
-            fmt.Printf("\n%s即将执行的命令可能有风险：%s\n", utils.Yellow("[警告] "), actualCmd)
-            if !e.autoExecute && !confirmExecution() {
-                return "", fmt.Errorf("用户取消了命令执行")
-            }
-            fallthrough
-
         default:
-            // 执行普通命令或确认后的危险命令
+            // 执行普通命令或危险命令
             fmt.Printf("\n%s执行命令：%s\n", utils.Blue("[执行] "), actualCmd)
             output, err := e.executeCommand(ctx, actualCmd)
             if err != nil {
